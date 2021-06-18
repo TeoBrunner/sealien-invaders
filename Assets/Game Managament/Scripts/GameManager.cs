@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class GameManager : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] static float iterationSpeedUp = 0.2f;
     [SerializeField] GameObject playerBoom;
     private static int scoresActual;
-    private static int scoresTop;
+     private static int scoresTop;
     public static bool isWaveActive = false;
     public static bool isGameOver = false;
     public static bool isPaused = false;
@@ -38,6 +39,14 @@ public class GameManager : MonoBehaviour
     WaveManager waveManager;
     AudioSource audioSource;
     [SerializeField] AudioClip FTLsound;
+
+    public static GameManager Instance;
+
+    private void Awake()
+    {
+        Instance = this;
+        Instance.LoadTop();
+    }
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -51,7 +60,7 @@ public class GameManager : MonoBehaviour
         StartGame();
 
 
-
+        if (scoresTop > 0) highScoreText.text = ("!! " + scoresTop);
     }
 
     void Update()
@@ -61,6 +70,25 @@ public class GameManager : MonoBehaviour
         if (GetEnemiesCount() == 0 && GetlasersCount() == 0 && isWaveActive && !isGameOver) StartCoroutine(JumpToNextWave());
         //Debug.Log(Time.timeScale);
         //UpdateTimeScale();
+    }
+    private void LoadTop()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            scoresTop = data.scoresTop;
+        }
+    }
+
+    private void SaveTop() 
+    {
+        SaveData data = new SaveData();
+        data.scoresTop = scoresTop;
+
+        string json = JsonUtility.ToJson(data);
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
     }
     void Pause()
     {
@@ -87,6 +115,7 @@ public class GameManager : MonoBehaviour
         //StartCoroutine(JumpToNextWave());
         //waveManager.SpawnWave(0);
         enemiesCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
+        if (scoresTop > 0) highScoreText.text = ("!! " + scoresTop);
     }
     public void GameOver()
     {
@@ -149,9 +178,11 @@ public class GameManager : MonoBehaviour
     }
     public static void UpdateScore(int _addScore)
     {
+        
         scoresActual += _addScore;
         if (scoresActual > scoresTop) scoresTop = scoresActual;
         if (scoresActual != 0 && scoresTop != 0) GameObject.Find("Game Manager").GetComponent<GameManager>().scoreText.text = ("# " + scoresActual);
+        GameManager.Instance.SaveTop();
     }
     public void Restart()
     {
@@ -385,4 +416,12 @@ public class GameManager : MonoBehaviour
         canInput = true;
         
     }
+
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int scoresTop;
+    }
+
 }
