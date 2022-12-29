@@ -7,7 +7,6 @@ using System.IO;
 
 public class GameManager : MonoBehaviour
 {
-    static int playerLives = 3;
     [SerializeField] GameObject livePicsHolder;
     [SerializeField] GameObject[] livePics;
     [SerializeField] AudioClip playerExplosion;
@@ -15,10 +14,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] Text highScoreText;
     [SerializeField] GameObject restartText;
     [SerializeField] GameObject pauseText;
-    public static float timeScaleOnStart = 1.2f;
-    public static float slowdownForEnemy = 0.98f;
-    public static float timeScaleActual;
-    //public static float slowdownModifier;
     [SerializeField] int currentWaveNumber;
     [SerializeField] static int enemiesCount;
     [SerializeField] static int lasersCount;
@@ -26,12 +21,17 @@ public class GameManager : MonoBehaviour
     [SerializeField] static int iterationNumber = 0;
     [SerializeField] static float iterationSpeedUp = 0.2f;
     [SerializeField] GameObject playerBoom;
-    private static int scoresActual;
-     private static int scoresTop;
+
+    static int playerLives = 3;
+    public static float timeScaleOnStart = 1.2f;
+    public static float slowdownForEnemy = 0.98f;
+    public static float timeScaleActual;
     public static bool isWaveActive = false;
     public static bool isGameOver = false;
     public static bool isPaused = false;
     public static bool canInput = false;
+    public static GameManager Instance;
+
     GameObject player;
     Canons canons;
     Engine engine;
@@ -40,13 +40,15 @@ public class GameManager : MonoBehaviour
     AudioSource audioSource;
     [SerializeField] AudioClip FTLsound;
 
-    public static GameManager Instance;
+    private static int scoresActual;
+    private static int scoresTop;
 
     private void Awake()
     {
         Instance = this;
         Instance.LoadTop();
     }
+    
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -58,19 +60,22 @@ public class GameManager : MonoBehaviour
         canons = player.GetComponent<Canons>();
         starsParallax = GameObject.Find("BackGround").GetComponent<StarsParallax>();
         StartGame();
-
-
-        if (scoresTop > 0) highScoreText.text = ("!! " + scoresTop);
+        if (scoresTop > 0) 
+        {
+            highScoreText.text = ("!! " + scoresTop);
+        }
     }
 
     void Update()
     {
-        if (Input.GetButtonDown("Pause")) Pause();
-        if (Input.GetKeyDown(KeyCode.R) && isGameOver && canInput) TrueRestart();
-        if (GetEnemiesCount() == 0 && GetlasersCount() == 0 && isWaveActive && !isGameOver) StartCoroutine(JumpToNextWave());
-        //Debug.Log(Time.timeScale);
-        //UpdateTimeScale();
+        if (Input.GetButtonDown("Pause")) 
+            Pause();
+        if (Input.GetKeyDown(KeyCode.R) && isGameOver && canInput) 
+            TrueRestart();
+        if (GetEnemiesCount() == 0 && GetlasersCount() == 0 && isWaveActive && !isGameOver) 
+            StartCoroutine(JumpToNextWave());
     }
+
     private void LoadTop()
     {
         string path = Application.persistentDataPath + "/savefile.json";
@@ -90,14 +95,15 @@ public class GameManager : MonoBehaviour
         string json = JsonUtility.ToJson(data);
         File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
     }
+
     void Pause()
     {
         float _timeScale = timeScaleActual;
         if (isPaused)
         {
-            
             Time.timeScale = _timeScale;
-            if (Time.timeScale < 0.3f) Time.timeScale = 0.4f;
+            if (Time.timeScale < 0.3f) 
+                Time.timeScale = 0.4f;
             pauseText.SetActive(false);
             isPaused = false;
         }
@@ -108,15 +114,16 @@ public class GameManager : MonoBehaviour
             isPaused = true;
         }
     }
+
     void StartGame()
     {
         currentWaveNumber = 0;
         StartCoroutine(StartPlayerMove());
-        //StartCoroutine(JumpToNextWave());
-        //waveManager.SpawnWave(0);
         enemiesCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
-        if (scoresTop > 0) highScoreText.text = ("!! " + scoresTop);
+        if (scoresTop > 0) 
+            highScoreText.text = ("!! " + scoresTop);
     }
+
     public void GameOver()
     {
         audioSource.PlayOneShot(playerExplosion);
@@ -126,6 +133,7 @@ public class GameManager : MonoBehaviour
         player.SetActive(false);
         isGameOver = true;
     }
+
     public static void ClearLasers()
     {
         GameObject[] _lasers;
@@ -140,6 +148,7 @@ public class GameManager : MonoBehaviour
             Destroy(laser);
         }
     }
+
     public static void ClearEnemies()
     {
         GameObject[] _enemies;
@@ -149,19 +158,15 @@ public class GameManager : MonoBehaviour
             Destroy(enemy);        
         }
     }
+
     public void TrueRestart()
     {
         GameObject.Find("Game Manager").GetComponent<GameManager>().scoreText.text = ("# 0");
         canInput = false;
-        //Restart();
-        //waveManager.Restart();
-        //starsParallax.Restart();
-        //canons.Restart();
-        //engine.Restart();
-        if (scoresTop > 0) highScoreText.text = ("!! " + scoresTop);
+        if (scoresTop > 0) 
+            highScoreText.text = ("!! " + scoresTop);
         UpdateScore(-scoresActual);
         ClearLasers();
-        //ClearEnemies();
         currentWaveNumber = -1;
         iterationNumber = 0;
         StartCoroutine(JumpToNextWave());
@@ -176,24 +181,17 @@ public class GameManager : MonoBehaviour
             StartCoroutine(HeartAnim(heart, true));
         }
     }
+     
     public static void UpdateScore(int _addScore)
     {
-        
         scoresActual += _addScore;
-        if (scoresActual > scoresTop) scoresTop = scoresActual;
-        if (scoresActual != 0 && scoresTop != 0) GameObject.Find("Game Manager").GetComponent<GameManager>().scoreText.text = ("# " + scoresActual);
+        if (scoresActual > scoresTop) 
+            scoresTop = scoresActual;
+        if (scoresActual != 0 && scoresTop != 0) 
+            GameObject.Find("Game Manager").GetComponent<GameManager>().scoreText.text = ("# " + scoresActual);
         GameManager.Instance.SaveTop();
     }
-    public void Restart()
-    {
-        Time.timeScale = timeScaleOnStart;
-        timeScaleOnStart = 1.2f;
-        slowdownForEnemy = 0.98f;
-        iterationNumber = 0;
-        iterationSpeedUp = 0.2f;
-        currentWaveNumber = -1;
 
-    }
     IEnumerator SpawnNextWave()
     {
         isWaveActive = false;
@@ -207,9 +205,11 @@ public class GameManager : MonoBehaviour
             waveManager.IterationSpeedUp(iterationNumber);
         }
         waveManager.SpawnWave(currentWaveNumber);
-        //isWaveActive = true;
-        //GameManager.UpdateTimeScale();
     }
+
+    private int beastNum = 50; //Because
+
+    //RevivePlayer drop player character and then slowly up his body to the heaven
     IEnumerator RevivePlayer()
     {
         canInput = false;
@@ -218,8 +218,7 @@ public class GameManager : MonoBehaviour
         player.SetActive(true);
 
         engine.SwitchToSTL();
-        //поднять игрока
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < beastNum; i++)
         {
             yield return new WaitForSeconds(0.005f);
             player.transform.position += Vector3.up * 0.06f;
@@ -227,25 +226,19 @@ public class GameManager : MonoBehaviour
         canInput = true;
         canons.isReloaded = true;
     }
+
     IEnumerator StartPlayerMove()
     {
         player.transform.position -= Vector3.up * 3;
         yield return new WaitForSeconds(0.3f);
         engine.SwitchToSTL();
-        //поднять игрока
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < beastNum; i++)
         {
             yield return new WaitForSeconds(0.005f);
             player.transform.position += Vector3.up * 0.06f;
         }
-        //engine.SwitchToSTL();
-        //waveManager.SpawnWave(0);
-
-        //заспавнить и опустить новую волну
-       // transform.position = new Vector3(transform.position.x, waveManager.startY, transform.position.z);
         transform.position = Vector3.up * 13;
         StartCoroutine(SpawnNextWave());
-        //GameManager.UpdateTimeScale();
         while (transform.position.y > 0)
         {
             yield return new WaitForSeconds(0.005f);
@@ -259,17 +252,20 @@ public class GameManager : MonoBehaviour
     {
         return currentWaveNumber;
     }
-    public static int GetlasersCount()
+
+    public static int GetlasersCount() //GetLasersCount cumel case
     {
         lasersCount = GameObject.FindGameObjectsWithTag("EnemyLaser").Length + GameObject.FindGameObjectsWithTag("PlayerLaser").Length;
         return lasersCount;
     }
+
     public static int GetEnemiesCount()
     {
         enemiesCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
         return enemiesCount;
     }
-    public IEnumerator HeartAnim(GameObject heart, bool show)
+
+    public IEnumerator HeartAnim(GameObject heart, bool show) //HeartAnimation
     {
         for (int i = 0; i < 5; i++)
         {            
@@ -280,6 +276,7 @@ public class GameManager : MonoBehaviour
         heart.SetActive(show);
         yield return new WaitForSeconds(1);
     }
+
     public void DamagePlayer(int _dmg)
     {
         playerLives -= _dmg;
@@ -300,11 +297,10 @@ public class GameManager : MonoBehaviour
         }
 
     }
+
     public static void UpdateTimeScale()
     {
-        //slowdownModifier = Mathf.Pow(slowdownForEnemy, GetEnemiesCount
         float _timeScale = (timeScaleOnStart + iterationNumber*iterationSpeedUp) *Mathf.Pow(slowdownForEnemy, GetEnemiesCount());
-        //float _timeScale = timeScaleOnStart * Mathf.Pow(slowdownForEnemy, enemiesCount);
         timeScaleActual = _timeScale;
         Time.timeScale = timeScaleActual;
         Debug.Log(Time.timeScale);
@@ -313,41 +309,27 @@ public class GameManager : MonoBehaviour
     IEnumerator JumpToNextWave()
     {
         currentWaveNumber++;
-        if (currentWaveNumber > 0) UpdateScore(1);
+        if (currentWaveNumber > 0)
+            UpdateScore(1);
         canInput = false;
         restartText.SetActive(false);
         isWaveActive = false;
         ClearLasers();
         StarsParallax parallax = GameObject.Find("BackGround").GetComponent<StarsParallax>();
-        //поднять камеру
-        GameObject _camera = GameObject.Find("Main Camera");
+        GameObject _camera = GameObject.Find("Main Camera"); // Camera.main
         float _cameraY = 0;
-        //for (int i = 0; i < 10; i++)
-        //{
-        //    yield return new WaitForSeconds(0.1f);
-        //    _camera.transform.position += (Vector3.up * 0.3f);
-        //}
-
-        //выключить игрока
-        //GameObject _player = GameObject.FindGameObjectWithTag("Player");
-        // _player.SetActive(false);
         engine.SwitchToFTL();
-
-        //прогнать врагов
         if (isGameOver)
         {
-
             ClearLasers();
-            while (transform.position.y < 15)
+            while (transform.position.y < 15) // Because
             {
                 yield return new WaitForSeconds(0.025f);
                 transform.position += Vector3.up * 0.8f;
             }
-
         }
-
-        if(FTLsound)audioSource.PlayOneShot(FTLsound);
-        //удлиннить звёзды
+        if (FTLsound)
+            audioSource.PlayOneShot(FTLsound);
         GameObject[] _stars = GameObject.FindGameObjectsWithTag("Star");
         float _scaleY = _stars[0].transform.localScale.y;
         for (int i = 0; i < 10; i++)
@@ -360,8 +342,6 @@ public class GameManager : MonoBehaviour
             }
         }
         yield return new WaitForSeconds(1f);
-
-        //укоротить звёзды
         _scaleY = _stars[0].transform.localScale.y;
         for (int i = 0; i < 10; i++)
         {
@@ -373,8 +353,6 @@ public class GameManager : MonoBehaviour
             }
         }
         engine.SwitchToSTL();
-
-        //рестартнуть игрока
         if (isGameOver)
         {
 
@@ -382,8 +360,7 @@ public class GameManager : MonoBehaviour
             player.transform.position -= Vector3.up * 3;
             yield return new WaitForSeconds(0.3f);
             engine.SwitchToSTL();
-            //поднять игрока
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < beastNum; i++)
             {
                 yield return new WaitForSeconds(0.005f);
                 player.transform.position += Vector3.up * 0.06f;
@@ -391,32 +368,17 @@ public class GameManager : MonoBehaviour
             isGameOver = false;
             canons.isReloaded = true;
         }
-
-
-        //опустить камеру
-        //for (int i = 0; i < 10; i++)
-        //{
-        //    yield return new WaitForSeconds(0.1f);
-        //    _camera.transform.position -= (Vector3.up * 0.3f);
-        //}
-
-        //заспавнить и опустить волну
         ClearEnemies();
-        //transform.position = new Vector3(transform.position.x, waveManager.startY, transform.position.z);
         transform.position = Vector3.up*15;
         StartCoroutine(SpawnNextWave());
-        //GameManager.UpdateTimeScale();
-
         while (transform.position.y > 0)
         {
             yield return new WaitForSeconds(0.005f);
             transform.position -= Vector3.up * 0.1f;
         }
         isWaveActive = true;
-        canInput = true;
-        
+        canInput = true;   
     }
-
 
     [System.Serializable]
     class SaveData
